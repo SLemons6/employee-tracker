@@ -5,10 +5,9 @@ const validateInput = require('../../utils/validateInput');
 
 // get all roles and their affiliated departments
 router.get('/roles', (req, res) => {
-    const sql = `SELECT roles.*, departments.name
-                    AS department_name
+    const sql = `SELECT roles.id, roles.title, roles.salary, departments.name AS department_name
                     FROM roles
-                    LEFT JOIN departments
+                    INNER JOIN departments
                     ON roles.department_id= departments.id`;
 
     db.query(sql, (err, rows) => {

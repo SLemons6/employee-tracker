@@ -22,21 +22,16 @@ router.get('/departments', (req, res) => {
 router.post('/department', ({ body }, res) => {
     const errors = validateInput(
         body,
-        'name',
-        'description'
+        'name'
     );
     if (errors) {
         res.status(400).json({ error: errors });
         return
     }
 
-    const sql = `INSERT INTO departments (name, description) VALUES (?,?)`;
-    const params = [
-        body.name,
-        body.description
-    ];
+    const sql = `INSERT INTO departments (name) VALUES (?)`;
 
-    db.query(sql, params, (err, result) => {
+    db.query(sql, body.name, (err, result) => {
         if (err) {
             res.status(400).json({ error: err.message });
             return;
