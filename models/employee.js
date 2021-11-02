@@ -1,25 +1,23 @@
-const createConnection = require('../../db/connection');
+const createConnection = require('../db/connection');
 
 class Employee {
-    get() {
-        const sql = `SELECT employees.*, roles.name AS role_name, departments.name AS department_name, 
-                FROM employees
-                LEFT JOIN roles
-                ON employees.role_id = roles.id
-                LEFT JOIN departments 
-                ON employees.department_id = departments.id`;
+    static get() {
+        const sql = `SELECT e.id, e.first_name, e.last_name, roles.title, departments.name AS department, roles.salary, CONCAT(m.first_name, ' ', m.last_name) AS manager
+                FROM employees e
+                INNER JOIN roles
+                ON e.role_id = roles.id
+                INNER JOIN departments 
+                ON roles.department_id = departments.id
+                LEFT JOIN employees m
+                ON e.manager_id = m.id`
+                ;
 
-        return Promise.resolve(createConnection).then((db) => {
-            db.query(sql, (err, rows) => {
-                if (err) {
-                    return Promise.reject({ error: err.message });
-                }
-                return Promise.resolve({
-                    message: 'query successful',
-                    data: rows
-                });
+        return createConnection().then((db) => {
+            return db.query(sql).finally(() => {
+                db.end();
             });
         });
     }
 }
 
+module.exports = Employee;
