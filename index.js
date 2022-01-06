@@ -1,10 +1,13 @@
 require("dotenv").config();
+const logo = require("asciiart-logo");
 const inquirer = require("inquirer");
 const db = require("./db")
 require("console.table");
 
+start();
+
 function startingPrompt() {
-    return inquirer.prompt([
+    inquirer.prompt([
         {
             type: "list",
             name: "choice",
@@ -72,59 +75,57 @@ function startingPrompt() {
                 }
             ]
         }
-    ])
-}
-
-// change function based on user"s choice
-async function start() {
-    const { choice } = await startingPrompt();
-
-    switch (choice) {
-        case "VIEW_ALL_EMPLOYEES":
-            showEmployees();
-            break;
-        case "VIEW_BY_DEPARTMENT":
-            showByDepartment();
-            break;
-        case "VIEW_BY_MANAGER":
-            showByManager();
-            break;
-        case "ADD_EMPLOYEE":
-            newEmployee();
-            break;
-        case "REMOVE_EMPLOYEE":
-            deleteEmployee();
-            break;
-        case "UPDATE_EMPLOYEE_ROLE":
-            changeEmployeeRole();
-            break;
-        case "UPDATE_EMPLOYEE_MANAGER":
-            changeEmployeeManager();
-            break;
-        case "VIEW_ROLES":
-            showRoles();
-            break;
-        case "ADD_ROLE":
-            newRole();
-            break;
-        case "REMOVE_ROLE":
-            deleteRole();
-            break;
-        case "VIEW_DEPARTMENTS":
-            showDepartments();
-            break;
-        case "ADD_DEPARTMENT":
-            newDepartment();
-            break;
-        case "REMOVE_DEPARTMENT":
-            deleteDepartment();
-            break;
-        case "VIEW_BUDGET_BY_DEPARTMENT":
-            showBudget();
-            break;
-        default:
-            finish();
+    ]).then(res => {
+        let action = res.choice;
+        // switch actions based on user's choice
+        switch (action) {
+            case "VIEW_ALL_EMPLOYEES":
+                showEmployees();
+                break;
+            case "VIEW_BY_DEPARTMENT":
+                showByDepartment();
+                break;
+            case "VIEW_BY_MANAGER":
+                showByManager();
+                break;
+            case "ADD_EMPLOYEE":
+                newEmployee();
+                break;
+            case "REMOVE_EMPLOYEE":
+                deleteEmployee();
+                break;
+            case "UPDATE_EMPLOYEE_ROLE":
+                changeEmployeeRole();
+                break;
+            case "UPDATE_EMPLOYEE_MANAGER":
+                changeEmployeeManager();
+                break;
+            case "VIEW_ROLES":
+                showRoles();
+                break;
+            case "ADD_ROLE":
+                newRole();
+                break;
+            case "REMOVE_ROLE":
+                deleteRole();
+                break;
+            case "VIEW_DEPARTMENTS":
+                showDepartments();
+                break;
+            case "ADD_DEPARTMENT":
+                newDepartment();
+                break;
+            case "REMOVE_DEPARTMENT":
+                deleteDepartment();
+                break;
+            case "VIEW_BUDGET_BY_DEPARTMENT":
+                showBudget();
+                break;
+            default:
+                finish();
+        }
     }
+    )
 }
 
 // Display all employees
@@ -188,7 +189,7 @@ function showByManager() {
                     let employees = rows;
                     console.log("\n");
                     if (employees.length === 0) {
-                        console.log(`${firstName} ${lastName} doesn't manage any employees`);
+                        console.log("This employee doesn't manage any employees");
                     } else {
                         console.table(employees);
                     }
@@ -221,7 +222,7 @@ function newEmployee() {
                         value: id
                     }));
 
-                    inquiere.prompt({
+                    inquirer.prompt({
                         type: "list",
                         name: "rId",
                         message: "What is the new employee's role?",
@@ -285,7 +286,7 @@ function deleteEmployee() {
                 }
             ])
                 .then(res => db.removeEmployee(res.eId))
-                .then(() => console.log(`Deleted ${firstName} ${lastName} from the database`))
+                .then(() => console.log("Deleted employee from the database"))
                 .then(() => startingPrompt())
         })
 }
@@ -322,12 +323,12 @@ function changeEmployeeRole() {
                                 {
                                     type: "list",
                                     name: "rId",
-                                    message: "Which role do you want to assign the selected employee?",
+                                    message: "What is the employee's new role?",
                                     choices: rChoices
                                 }
                             ])
                                 .then(res => db.updateRole(employeeId, res.rId))
-                                .then(() => console.log(`Updated ${firstName} ${lastName}'s role`))
+                                .then(() => console.log("Changed the employee's role"))
                                 .then(() => startingPrompt())
                         });
                 });
@@ -372,13 +373,149 @@ function changeEmployeeManager() {
                                 }
                             ])
                                 .then(res => db.updateManager(employeeId, res.mId))
-                                .then(() => console.log(`Updated ${first_name} ${last_name} manager.`))
+                                .then(() => console.log("Updated the employee's manager."))
                                 .then(() => startingPrompt())
                         })
                 })
         })
 }
 
+// Display roles
+function showRoles() {
+    db.viewAllRoles()
+        .then(([rows]) => {
+            let roles = rows;
+            console.log("\n");
+            console.table(roles);
+        })
+        .then(() => startingPrompt());
+}
+
+// Create a role
+function newRole() {
+    db.viewDepartments()
+        .then(([rows]) => {
+            let departments = rows;
+            const dChoices = departments.map(({ id, name }) => ({
+                name: name,
+                value: id
+            }));
+
+            prompt([
+                {
+                    name: "title",
+                    message: "What is the role's title?"
+                },
+                {
+                    name: "salary",
+                    message: "What is the role's salary?"
+                },
+                {
+                    type: "list",
+                    name: "dId",
+                    message: "Which department does the role belong to?",
+                    choices: dChoices
+                }
+            ])
+                .then(role => {
+                    db.addRole(role)
+                        .then(() => console.log(`Created ${role.title}`))
+                        .then(() => startingPrompt())
+                })
+        })
+}
+
+// Remove a role
+function deleteRole() {
+    db.viewAllRoles()
+        .then(([rows]) => {
+            let roles = rows;
+            const rChoices = roles.map(({ id, title }) => ({
+                name: title,
+                value: id
+            }));
+
+            prompt([
+                {
+                    type: "list",
+                    name: "rId",
+                    message:
+                        "Which role do you want to delete? Be careful, all employees that have this role will also be removed.",
+                    choices: rChoices
+                }
+            ])
+                .then(res => db.removeRole(res.rId))
+                .then(() => console.log("Removed role from the database"))
+                .then(() => startingPrompt())
+        })
+}
+
+// Display deparments
+function showDepartments() {
+    db.viewDepartments()
+        .then(([rows]) => {
+            let departments = rows;
+            console.log("\n");
+            console.table(departments);
+        })
+        .then(() => startingPrompt());
+}
+
+// Create a department
+function newDepartment() {
+    inquiere.prompt([
+        {
+            name: "name",
+            message: "What is the name of the department?"
+        }
+    ])
+        .then(res => {
+            let name = res;
+            db.addDepartment(name)
+                .then(() => console.log(`Added ${name.name} to the database`))
+                .then(() => startingPrompt())
+        })
+}
+
+// Delete a department
+function deleteDepartment() {
+    db.viewDepartments()
+        .then(([rows]) => {
+            let departments = rows;
+            const dChoices = departments.map(({ id, name }) => ({
+                name: name,
+                value: id
+            }));
+
+            prompt({
+                type: "list",
+                name: "dId",
+                message:
+                    "Which department do you want to delete? Be careful, this will also delete the roles and employees belonging to this department",
+                choices: dChoices
+            })
+                .then(res => db.removeDepartment(res.dId))
+                .then(() => console.log("Deleted department from the database"))
+                .then(() => startingPrompt())
+        })
+}
+
+// View all departments and budget
+function showBudget() {
+    db.viewBudget()
+        .then(([rows]) => {
+            let departments = rows;
+            console.log("\n");
+            console.table(departments);
+        })
+        .then(() => startingPrompt());
+}
+
+// Finish changes to the database and quit app
+function finish() {
+    console.log("All done!");
+    process.exit();
+}
 
 
 // start().catch((err) => {
