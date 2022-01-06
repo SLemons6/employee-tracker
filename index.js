@@ -1,17 +1,26 @@
 require("dotenv").config();
 const logo = require("asciiart-logo");
-const inquirer = require("inquirer");
 const db = require("./db")
+const inquirer = require("inquirer");
 require("console.table");
 
 start();
+
+// On app start, show logo and load starting prompt
+function start() {
+    const startingLogo = logo({ name: "Employee Manager" }).render();
+
+    console.log(startingLogo);
+
+    startingPrompt();
+}
 
 function startingPrompt() {
     inquirer.prompt([
         {
             type: "list",
             name: "choice",
-            message: "What would you like to do?.",
+            message: "What would you like to do?",
             choices: [
                 {
                     name: "View All Employees",
@@ -35,12 +44,12 @@ function startingPrompt() {
                 },
                 {
                     name: "Update Employee Role",
-                    value: "UPDATE_EMPLOYEE_ROLE"
+                    value: "UPDATE_ROLE"
                 },
-                {
-                    name: "Update Employee Manager",
-                    value: "UPDATE_MANAGER"
-                },
+                // {
+                //     name: "Update Employee Manager",
+                //     value: "UPDATE_MANAGER"
+                // },
                 {
                     name: "View All Roles",
                     value: "VIEW_ROLES"
@@ -94,12 +103,12 @@ function startingPrompt() {
             case "REMOVE_EMPLOYEE":
                 deleteEmployee();
                 break;
-            case "UPDATE_EMPLOYEE_ROLE":
+            case "UPDATE_ROLE":
                 changeEmployeeRole();
                 break;
-            case "UPDATE_EMPLOYEE_MANAGER":
-                changeEmployeeManager();
-                break;
+            // case "UPDATE_MANAGER": -not working
+            //     changeEmployeeManager();
+            //     break;
             case "VIEW_ROLES":
                 showRoles();
                 break;
@@ -133,6 +142,7 @@ function showEmployees() {
     db.findEmployees()
         .then(([rows]) => {
             let employees = rows;
+            console.log("\n");
             console.table(employees);
         })
         .then(() => startingPrompt());
@@ -311,7 +321,7 @@ function changeEmployeeRole() {
             ])
                 .then(res => {
                     let employeeId = res.eId;
-                    db.findAllRoles()
+                    db.viewAllRoles()
                         .then(([rows]) => {
                             let roles = rows;
                             const rChoices = roles.map(({ id, title }) => ({
@@ -335,50 +345,49 @@ function changeEmployeeRole() {
         })
 }
 
-// Change an employee's manager
-function changeEmployeeManager() {
-    db.findEmployees()
-        .then(([rows]) => {
-            let employees = rows;
-            const eChoices = employees.map(({ id, first_name, last_name }) => ({
-                name: `${first_name} ${last_name}`,
-                value: id
-            }));
+// // Change an employee's manager - not working, throwing UnhandledPromiseRejectionWarning
+// function changeEmployeeManager() {
+//     db.findEmployees()
+//         .then(([rows]) => {
+//             let employees = rows;
+//             const eChoices = employees.map(({ id, first_name, last_name }) => ({
+//                 name: `${first_name} ${last_name}`,
+//                 value: id
+//             }));
 
-            inquirer.prompt([
-                {
-                    type: "list",
-                    name: "eId",
-                    message: "Which employee's manager do you want to update?",
-                    choices: eChoices
-                }
-            ])
-                .then(res => {
-                    let employeeId = res.eId
-                    db.findAllPossibleManagers(employeeId)
-                        .then(([rows]) => {
-                            let managers = rows;
-                            const mChoices = managers.map(({ id, first_name, last_name }) => ({
-                                name: `${first_name} ${last_name}`,
-                                value: id
-                            }));
+//             inquirer.prompt([
+//                 {
+//                     type: "list",
+//                     name: "eId",
+//                     message: "Which employee do you want to change managers for?",
+//                     choices: eChoices
+//                 }
+//             ])
+//                 .then(res => {
+//                     let employeeId = res.eId
+//                     db.findByManager(employeeId)
+//                         .then(([rows]) => {
+//                             let managers = rows;
+//                             const mChoices = managers.map(({ id, first_name, last_name }) => ({
+//                                 name: `${first_name} ${last_name}`,
+//                                 value: id
+//                             }));
 
-                            inquirer.prompt([
-                                {
-                                    type: "list",
-                                    name: "mId",
-                                    message:
-                                        "Which employee do you want to set as manager for the selected employee?",
-                                    choices: mChoices
-                                }
-                            ])
-                                .then(res => db.updateManager(employeeId, res.mId))
-                                .then(() => console.log("Updated the employee's manager."))
-                                .then(() => startingPrompt())
-                        })
-                })
-        })
-}
+//                             inquirer.prompt([
+//                                 {
+//                                     type: "list",
+//                                     name: "managerId",
+//                                     message: "Who will be the employee's new manager?",
+//                                     choices: mChoices
+//                                 }
+//                             ])
+//                                 .then(res => db.updateManager(employeeId, res.mId))
+//                                 .then(() => console.log("Updated the employee's manager."))
+//                                 .then(() => startingPrompt())
+//                         })
+//                 })
+//         })
+// }
 
 // Display roles
 function showRoles() {
@@ -401,7 +410,7 @@ function newRole() {
                 value: id
             }));
 
-            prompt([
+            inquirer.prompt([
                 {
                     name: "title",
                     message: "What is the role's title?"
@@ -412,7 +421,7 @@ function newRole() {
                 },
                 {
                     type: "list",
-                    name: "dId",
+                    name: "department_id",
                     message: "Which department does the role belong to?",
                     choices: dChoices
                 }
@@ -435,7 +444,7 @@ function deleteRole() {
                 value: id
             }));
 
-            prompt([
+            inquirer.prompt([
                 {
                     type: "list",
                     name: "rId",
@@ -463,7 +472,7 @@ function showDepartments() {
 
 // Create a department
 function newDepartment() {
-    inquiere.prompt([
+    inquirer.prompt([
         {
             name: "name",
             message: "What is the name of the department?"
@@ -487,7 +496,7 @@ function deleteDepartment() {
                 value: id
             }));
 
-            prompt({
+            inquirer.prompt({
                 type: "list",
                 name: "dId",
                 message:
@@ -516,9 +525,3 @@ function finish() {
     console.log("All done!");
     process.exit();
 }
-
-
-// start().catch((err) => {
-//     console.error(err);
-// });
-start();
