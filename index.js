@@ -63,10 +63,13 @@ function startingPrompt() {
                     value: "REMOVE_DEPARTMENT"
                 },
                 {
-                    name: "View Total Utilized Budget By Department",
-                    value: "VIEW_UTILIZED_BUDGET_BY_DEPARTMENT"
+                    name: "View Total Budget By Department",
+                    value: "VIEW_BUDGET_BY_DEPARTMENT"
                 },
-
+                {
+                    name: 'Finish',
+                    value: "FINISH"
+                }
             ]
         }
     ])
