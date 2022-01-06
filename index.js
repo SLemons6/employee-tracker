@@ -1,34 +1,34 @@
-require('dotenv').config();
-const inquirer = require('inquirer');
-const Employee = require('./models/Employee');
-require('console.table');
+require("dotenv").config();
+const inquirer = require("inquirer");
+const db = require("./db")
+require("console.table");
 
 function startingPrompt() {
     return inquirer.prompt([
         {
-            type: 'list',
-            name: 'action',
-            message: 'Choose an action.',
+            type: "list",
+            name: "choice",
+            message: "What would you like to do?.",
             choices: [
                 {
-                    name: 'View All Employees',
-                    value: 'VIEW_ALL_EMPLOYEES'
+                    name: "View All Employees",
+                    value: "VIEW_ALL_EMPLOYEES"
                 },
                 {
-                    name: 'View All Empoyees By Department',
-                    value: 'VIEW_EMPLOYEES_BY_DEPARTMENT'
+                    name: "View All Empoyees By Department",
+                    value: "VIEW_BY_DEPARTMENT"
                 },
                 {
-                    name: 'View All Employees By Manager',
-                    value: 'VIEW_EMPLOYEES_BY_MANAGER',
+                    name: "View All Employees By Manager",
+                    value: "VIEW_BY_MANAGER",
                 },
                 {
-                    name: 'Add Employee',
-                    value: 'ADD_EMPLOYEE'
+                    name: "Add Employee",
+                    value: "ADD_EMPLOYEE"
                 },
                 {
-                    name: 'Remove Employee',
-                    value: 'REMOVE_EMPLOYEE'
+                    name: "Remove Employee",
+                    value: "REMOVE_EMPLOYEE"
                 },
                 {
                     name: "Update Employee Role",
@@ -36,7 +36,7 @@ function startingPrompt() {
                 },
                 {
                     name: "Update Employee Manager",
-                    value: "UPDATE_EMPLOYEE_MANAGER"
+                    value: "UPDATE_MANAGER"
                 },
                 {
                     name: "View All Roles",
@@ -67,7 +67,7 @@ function startingPrompt() {
                     value: "VIEW_BUDGET_BY_DEPARTMENT"
                 },
                 {
-                    name: 'Finish',
+                    name: "Finish",
                     value: "FINISH"
                 }
             ]
@@ -75,21 +75,99 @@ function startingPrompt() {
     ])
 }
 
+// change function based on user"s choice
 async function start() {
-    const { action } = await startingPrompt();
+    const { choice } = await startingPrompt();
 
-
-    switch (action) {
-        case 'view all employees':
-            const [rows, _] = await Employee.get();
-            console.table(rows);
+    switch (choice) {
+        case "VIEW_ALL_EMPLOYEES":
+            showEmployees();
             break;
-        default: console.log('');
+        case "VIEW_BY_DEPARTMENT":
+            showByDepartment();
+            break;
+        case "VIEW_BY_MANAGER":
+            showByManager();
+            break;
+        case "ADD_EMPLOYEE":
+            newEmployee();
+            break;
+        case "REMOVE_EMPLOYEE":
+            deleteEmployee();
+            break;
+        case "UPDATE_EMPLOYEE_ROLE":
+            changeEmployeeRole();
+            break;
+        case "UPDATE_EMPLOYEE_MANAGER":
+            changeEmployeeManager();
+            break;
+        case "VIEW_ROLES":
+            showRoles();
+            break;
+        case "ADD_ROLE":
+            newRole();
+            break;
+        case "REMOVE_ROLE":
+            deleteRole();
+            break;
+        case "VIEW_DEPARTMENTS":
+            showDepartments();
+            break;
+        case "ADD_DEPARTMENT":
+            newDepartment();
+            break;
+        case "REMOVE_DEPARTMENT":
+            deleteDepartment();
+            break;
+        case "VIEW_BUDGET_BY_DEPARTMENT":
+            showBudget();
+            break;
+        default:
+            finish();
     }
 }
 
-// start().catch((err) => {
-//     console.error(err);
-// });
+// Display all employees
+function showEmployees() {
+    db.findAllEmployees()
+    .then(([rows]) => {
+        let employees = rows;
+        console.table(employees);
+    })
+    .then(() => startingPrompt());
+    }
 
+// Display employees by department
+function showByDepartment() {
+    db.findByDepartment()
+    .then(([rows]) => {
+        let departments = rows;
+        const dChoices = departments.map(({ id, name }) => ({
+            name: name,
+            value: id
+        }));
+        
+        inquirer.prompt([
+            {
+                type: "list",
+                name: "departmentId",
+                message: "Which department's employees do you wish to see?",
+                choices: dChoices
+            }
+        ])
+            .then(res => db.findByDepartment(res.departmentId))
+            .then(([rows]) => {
+                let employees = rows;
+                console.table(employees);
+            })
+            .then(() => startingPrompt())
+    });
+} 
+
+
+
+
+                        // start().catch((err) => {
+                            //     console.error(err);
+                            // });
 start();
